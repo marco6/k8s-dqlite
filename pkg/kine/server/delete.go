@@ -6,14 +6,14 @@ import (
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 )
 
-func isDelete(txn *etcdserverpb.TxnRequest) (int64, string, bool) {
+func isDelete(txn *etcdserverpb.TxnRequest) (int64, []byte, bool) {
 	if len(txn.Compare) == 0 &&
 		len(txn.Failure) == 0 &&
 		len(txn.Success) == 2 &&
 		txn.Success[0].GetRequestRange() != nil &&
 		txn.Success[1].GetRequestDeleteRange() != nil {
 		rng := txn.Success[1].GetRequestDeleteRange()
-		return 0, string(rng.Key), true
+		return 0, rng.Key, true
 	}
 	if len(txn.Compare) == 1 &&
 		txn.Compare[0].Target == etcdserverpb.Compare_MOD &&
@@ -22,12 +22,12 @@ func isDelete(txn *etcdserverpb.TxnRequest) (int64, string, bool) {
 		txn.Failure[0].GetRequestRange() != nil &&
 		len(txn.Success) == 1 &&
 		txn.Success[0].GetRequestDeleteRange() != nil {
-		return txn.Compare[0].GetModRevision(), string(txn.Success[0].GetRequestDeleteRange().Key), true
+		return txn.Compare[0].GetModRevision(), txn.Success[0].GetRequestDeleteRange().Key, true
 	}
-	return 0, "", false
+	return 0, nil, false
 }
 
-func (l *LimitedServer) delete(ctx context.Context, key string, revision int64) (*etcdserverpb.TxnResponse, error) {
+func (l *LimitedServer) delete(ctx context.Context, key []byte, revision int64) (*etcdserverpb.TxnResponse, error) {
 	rev, kv, ok, err := l.backend.Delete(ctx, key, revision)
 	if err != nil {
 		return nil, err

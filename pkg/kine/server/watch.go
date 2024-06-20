@@ -56,9 +56,7 @@ func (w *watcher) Start(ctx context.Context, r *etcdserverpb.WatchCreateRequest)
 	w.watches[id] = cancel
 	w.wg.Add(1)
 
-	key := string(r.Key)
-
-	logrus.Debugf("WATCH START id=%d, count=%d, key=%s, revision=%d", id, len(w.watches), key, r.StartRevision)
+	logrus.Debugf("WATCH START id=%d, count=%d, key=%s, revision=%d", id, len(w.watches), string(r.Key), r.StartRevision)
 
 	go func() {
 		defer w.wg.Done()
@@ -71,7 +69,7 @@ func (w *watcher) Start(ctx context.Context, r *etcdserverpb.WatchCreateRequest)
 			return
 		}
 
-		for events := range w.backend.Watch(ctx, key, r.StartRevision) {
+		for events := range w.backend.Watch(ctx, r.Key, r.StartRevision) {
 			if len(events) == 0 {
 				continue
 			}
@@ -92,7 +90,7 @@ func (w *watcher) Start(ctx context.Context, r *etcdserverpb.WatchCreateRequest)
 			}
 		}
 		w.Cancel(id, nil)
-		logrus.Debugf("WATCH CLOSE id=%d, key=%s", id, key)
+		logrus.Debugf("WATCH CLOSE id=%d, key=%s", id, string(r.Key))
 	}()
 }
 

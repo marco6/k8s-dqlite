@@ -28,7 +28,7 @@ func (l *LimitedServer) create(ctx context.Context, put *etcdserverpb.PutRequest
 		return nil, unsupported("prevKv")
 	}
 
-	rev, err := l.backend.Create(ctx, string(put.Key), put.Value, put.Lease)
+	rev, err := l.backend.Create(ctx, put.Key, put.Value, put.Lease)
 	if err == ErrKeyExists {
 		return &etcdserverpb.TxnResponse{
 			Header:    txnHeader(rev),

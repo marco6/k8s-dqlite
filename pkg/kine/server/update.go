@@ -6,7 +6,7 @@ import (
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 )
 
-func isUpdate(txn *etcdserverpb.TxnRequest) (int64, string, []byte, int64, bool) {
+func isUpdate(txn *etcdserverpb.TxnRequest) (int64, []byte, []byte, int64, bool) {
 	if len(txn.Compare) == 1 &&
 		txn.Compare[0].Target == etcdserverpb.Compare_MOD &&
 		txn.Compare[0].Result == etcdserverpb.Compare_EQUAL &&
@@ -15,15 +15,15 @@ func isUpdate(txn *etcdserverpb.TxnRequest) (int64, string, []byte, int64, bool)
 		len(txn.Failure) == 1 &&
 		txn.Failure[0].GetRequestRange() != nil {
 		return txn.Compare[0].GetModRevision(),
-			string(txn.Compare[0].Key),
+			txn.Compare[0].Key,
 			txn.Success[0].GetRequestPut().Value,
 			txn.Success[0].GetRequestPut().Lease,
 			true
 	}
-	return 0, "", nil, 0, false
+	return 0, nil, nil, 0, false
 }
 
-func (l *LimitedServer) update(ctx context.Context, rev int64, key string, value []byte, lease int64) (*etcdserverpb.TxnResponse, error) {
+func (l *LimitedServer) update(ctx context.Context, rev int64, key []byte, value []byte, lease int64) (*etcdserverpb.TxnResponse, error) {
 	var (
 		kv  *KeyValue
 		ok  bool

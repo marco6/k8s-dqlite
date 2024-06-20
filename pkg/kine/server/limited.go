@@ -13,6 +13,9 @@ type LimitedServer struct {
 
 func (l *LimitedServer) Range(ctx context.Context, r *etcdserverpb.RangeRequest) (*RangeResponse, error) {
 	if len(r.RangeEnd) == 0 {
+		if r.Limit != 0 {
+			return nil, fmt.Errorf("invalid combination of rangeEnd and limit, limit should be 0 got %d", r.Limit)
+		}
 		return l.get(ctx, r)
 	}
 	return l.list(ctx, r)

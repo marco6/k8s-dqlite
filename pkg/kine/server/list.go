@@ -1,29 +1,23 @@
 package server
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"go.etcd.io/etcd/api/v3/etcdserverpb"
 )
 
-func (l *LimitedServer) list(ctx context.Context, r *etcdserverpb.RangeRequest) (*RangeResponse, error) {
-	if len(r.RangeEnd) == 0 {
-		return nil, fmt.Errorf("invalid range end length of 0")
-	}
+// prefix := string(append(r.RangeEnd[:len(r.RangeEnd)-1], r.RangeEnd[len(r.RangeEnd)-1]-1))
+// if !strings.HasSuffix(prefix, "/") {
+// 	prefix = prefix + "/"
+// }
+// start := string(bytes.TrimRight(r.Key, "\x00"))
 
-	prefix := string(append(r.RangeEnd[:len(r.RangeEnd)-1], r.RangeEnd[len(r.RangeEnd)-1]-1))
-	if !strings.HasSuffix(prefix, "/") {
-		prefix = prefix + "/"
-	}
-	start := string(bytes.TrimRight(r.Key, "\x00"))
+func (l *LimitedServer) list(ctx context.Context, r *etcdserverpb.RangeRequest) (*RangeResponse, error) {
 	revision := r.Revision
 
 	if r.CountOnly {
-		rev, count, err := l.backend.Count(ctx, prefix, start, revision)
+		rev, count, err := l.backend.Count(ctx, r.Key, r.RangeEnd, revision)
 		if err != nil {
 			return nil, err
 		}
@@ -39,7 +33,7 @@ func (l *LimitedServer) list(ctx context.Context, r *etcdserverpb.RangeRequest) 
 		limit++
 	}
 
-	rev, kvs, err := l.backend.List(ctx, prefix, start, limit, revision)
+	rev, kvs, err := l.backend.List(ctx, r.Key, r.RangeEnd, limit, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +54,7 @@ func (l *LimitedServer) list(ctx context.Context, r *etcdserverpb.RangeRequest) 
 		}
 
 		// count the actual number of results if there are more items in the db.
-		rev, resp.Count, err = l.backend.Count(ctx, prefix, start, revision)
+		rev, resp.Count, err = l.backend.Count(ctx, r.Key, r.RangeEnd, revision)
 		if err != nil {
 			return nil, err
 		}
