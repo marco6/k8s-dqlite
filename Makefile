@@ -10,7 +10,7 @@ go.vet:
 	$(DQLITE_BUILD_SCRIPTS_DIR)/static-go-vet.sh ./...
 
 go.test:
-	go test -tags=libsqlite3 -v ./test
+	go test -tags=libsqlite3 -v ./...
 
 go.test.dqlite:
 	$(DQLITE_BUILD_SCRIPTS_DIR)/static-go-test.sh -v ./test
