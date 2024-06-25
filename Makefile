@@ -13,13 +13,13 @@ go.test:
 	go test -v -p 1 ./...
 
 go.test.dqlite:
-	$(DQLITE_BUILD_SCRIPTS_DIR)/static-go-test.sh -v ./test
+	$(DQLITE_BUILD_SCRIPTS_DIR)/static-go-test.sh -v ./...
 
 go.bench:
-	go test -tags=libsqlite3 -v ./test -run "^$$" -bench "Benchmark" -benchmem
+	go test -tags=libsqlite3 -v ./... -run "^$$" -bench "Benchmark" -benchmem
 
 go.bench.dqlite:
-	$(DQLITE_BUILD_SCRIPTS_DIR)/static-go-test.sh -v ./test -run "^$$" -bench "Benchmark" -benchmem
+	$(DQLITE_BUILD_SCRIPTS_DIR)/static-go-test.sh -v ./... -run "^$$" -bench "Benchmark" -benchmem
 
 ## Static Builds
 static: bin/static/k8s-dqlite bin/static/dqlite
