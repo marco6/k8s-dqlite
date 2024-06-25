@@ -18,7 +18,7 @@ func init() {
 type Server struct{}
 
 func (*Server) Start(ctx context.Context) error    { return errNoDqlite }
-func (*Server) MustStop() chan struct{}            { return closedCh }
+func (*Server) MustStop() <-chan struct{}          { return closedCh }
 func (*Server) Shutdown(ctx context.Context) error { return errNoDqlite }
 
 func New(
