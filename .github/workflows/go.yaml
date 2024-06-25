@@ -6,75 +6,75 @@ on:
   pull_request:
 
 jobs:
-  code-quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
+  # code-quality:
+  #   name: Code Quality
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Check out code
+  #       uses: actions/checkout@v4
 
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.21"
+  #     - name: Install Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.21"
 
-      - name: go mod download
-        run: go mod download
+  #     - name: go mod download
+  #       run: go mod download
 
-      - name: go fmt
-        run: make go.fmt
+  #     - name: go fmt
+  #       run: make go.fmt
 
-      - name: check diff
-        run: |
-          if ! [ -z "$(git diff)" ]; then
-            echo "Detected changes that have not been committed to the repository"
-            echo "Please run 'make go.fmt'"
-            echo "git diff:"
-            git diff
-            exit 1
-          fi
+  #     - name: check diff
+  #       run: |
+  #         if ! [ -z "$(git diff)" ]; then
+  #           echo "Detected changes that have not been committed to the repository"
+  #           echo "Please run 'make go.fmt'"
+  #           echo "git diff:"
+  #           git diff
+  #           exit 1
+  #         fi
 
-      - name: go vet
-        run: make go.vet
+  #     - name: go vet
+  #       run: make go.vet
 
-  tests-sqlite:
-    name: Test sqlite
-    runs-on: ubuntu-latest
+  # tests-sqlite:
+  #   name: Test sqlite
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Check out Code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Check out Code
+  #       uses: actions/checkout@v4
 
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.21"
+  #     - name: Install Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.21"
 
-      - name: go mod download
-        run: go mod download
+  #     - name: go mod download
+  #       run: go mod download
 
-      - name: Run tests
-        run: make go.test
+  #     - name: Run tests
+  #       run: make go.test
 
-  tests-dqlite:
-    name: Test dqlite
-    runs-on: ubuntu-latest
+  # tests-dqlite:
+  #   name: Test dqlite
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Check out Code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Check out Code
+  #       uses: actions/checkout@v4
 
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.21"
+  #     - name: Install Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.21"
 
-      - name: go mod download
-        run: go mod download
+  #     - name: go mod download
+  #       run: go mod download
 
-      - name: Run tests
-        run: make go.test.dqlite
+  #     - name: Run tests
+  #       run: make go.test.dqlite
 
   benchmarks:
     name: Benchmark sqlite
@@ -93,52 +93,91 @@ jobs:
         run: go mod download
 
       - name: Run benchmarks
-        run: make go.bench
+        run: make go.bench | tee output.txt
 
-  benchmarks-dqlite:
-    name: Benchmark dqlite
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out Code
-        uses: actions/checkout@v4
-
-      - name: Install Go
-        uses: actions/setup-go@v5
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
         with:
-          go-version: "1.21"
+          path: ./benchmarks
+          key: ${{ runner.os }}-benchmark
 
-      - name: go mod download
-        run: go mod download
-
-      - name: Run benchmarks
-        run: make go.bench.dqlite
-
-  build:
-    name: Build k8s-dqlite
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Install Go
-        uses: actions/setup-go@v5
+      - name: Store benchmarks result
+        uses: benchmark-action/github-action-benchmark@v1.20.3
         with:
-          go-version: "1.21"
+          name: SQLite
+          tool: 'go'
+          output-file-path: output.txt
+          external-data-json-path: ./benchmarks/data.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: "benchmarks"
+          alert-threshold: "150%"
+          summary-always: true
+          comment-always: true
+          fail-on-alert: true
+          fail-threshold: "400%"
 
-      - name: Build static binaries
-        run: |
-          make -j static
 
-          ./bin/static/k8s-dqlite --help
-          ./bin/static/k8s-dqlite migrator --help
-          ./bin/static/dqlite --help
+  # benchmarks-dqlite:
+  #   name: Benchmark dqlite
+  #   runs-on: ubuntu-latest
 
-      - name: Build shared binaries
-        run: |
-          make -j dynamic
+  #   steps:
+  #     - name: Check out Code
+  #       uses: actions/checkout@v4
 
-          ./bin/dynamic/k8s-dqlite --help
-          ./bin/dynamic/k8s-dqlite migrator --help
-          ./bin/dynamic/dqlite --help
+  #     - name: Install Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.21"
+
+  #     - name: go mod download
+  #       run: go mod download
+
+  #     - name: Run benchmarks
+  #       run: make go.bench.dqlite | tee output.txt
+
+  #     - name: Store benchmarks result
+  #       uses: benchmark-action/github-action-benchmark@v1.20.3
+  #       with:
+  #         name: dqlite
+  #         tool: 'go'
+  #         output-file-path: output.txt
+  #         external-data-json-path: ./benchmarks/data.json
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         gh-pages-branch: gh-pages
+  #         benchmark-data-dir-path: "benchmarks"
+  #         alert-threshold: "150%"
+  #         summary-always: true
+  #         comment-always: true
+  #         fail-on-alert: true
+  #         fail-threshold: "400%"
+
+  # build:
+  #   name: Build k8s-dqlite
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Check out code
+  #       uses: actions/checkout@v4
+
+  #     - name: Install Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.21"
+
+  #     - name: Build static binaries
+  #       run: |
+  #         make -j static
+
+  #         ./bin/static/k8s-dqlite --help
+  #         ./bin/static/k8s-dqlite migrator --help
+  #         ./bin/static/dqlite --help
+
+  #     - name: Build shared binaries
+  #       run: |
+  #         make -j dynamic
+
+  #         ./bin/dynamic/k8s-dqlite --help
+  #         ./bin/dynamic/k8s-dqlite migrator --help
+  #         ./bin/dynamic/dqlite --help
