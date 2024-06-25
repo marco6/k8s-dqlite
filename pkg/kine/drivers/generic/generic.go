@@ -489,6 +489,7 @@ func (d *Generic) GetCompactRevision(ctx context.Context) (int64, int64, error) 
 			time.Sleep(jitter.Deviation(nil, 0.3)(2 * time.Millisecond))
 			continue
 		}
+		break
 	}
 	done()
 	if err == sql.ErrNoRows {
